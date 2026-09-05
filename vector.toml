@@ -1,0 +1,24 @@
+[sources.docker_logs]
+type = "docker_logs"
+include_containers = ["security-service", "uploader-service", "gateway", "minio"]
+
+[transforms.clean_logs]
+type = "remap"
+inputs = ["docker_logs"]
+source = """
+del(.label)
+del(.container_created_at)
+.json = parse_json(.message) ?? {}
+"""
+
+[sinks.es_out]
+type = "elasticsearch"
+inputs = ["clean_logs"]
+endpoints = ["http://elasticsearch:9200"]
+mode = "bulk"
+compression = "none"
+healthcheck.enabled = true
+
+auth.strategy = "basic"
+auth.user = "elastic"
+auth.password = "qwerty123456"
